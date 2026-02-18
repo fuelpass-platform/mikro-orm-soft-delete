@@ -8,6 +8,7 @@
     "test": "jest --detectOpenHandles",
     "prebuild": "rimraf lib",
     "build": "tsc -b tsconfig.build.json",
+    "postinstall": "npm run build",
     "format": "prettier --write \"**/*.ts\" \"*.js\" \"*.json\"",
     "format:diff": "prettier --list-different \"**/*.ts\"",
     "lint": "eslint --cache \"**/*.ts\"",

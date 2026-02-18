@@ -26,18 +26,10 @@ export class SoftDeleteHandler implements EventSubscriber {
         <Entity extends object, Field extends keyof Entity>(
           item: ChangeSet<Entity>,
         ) => {
-          console.log("[SoftDeleteHandler] Processing changeset:", {
-            type: item.type,
-            entityName: item.entity.constructor.name,
-            hasSoftDeletableMetadata: Reflect.hasMetadata(SOFT_DELETABLE, item.entity.constructor),
-          });
-
           if (
             item.type === ChangeSetType.DELETE &&
             Reflect.hasMetadata(SOFT_DELETABLE, item.entity.constructor)
           ) {
-            console.log("[SoftDeleteHandler] Soft-deleting entity:", item.entity.constructor.name);
-
             const config: SoftDeletableConfig<Entity, Field> =
               Reflect.getMetadata(SOFT_DELETABLE, item.entity.constructor);
             const { field, value, deletedByField, getDeletedBy } = config;

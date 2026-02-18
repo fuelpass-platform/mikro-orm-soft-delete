@@ -54,6 +54,15 @@ export function SoftDeletable<Entity, Field extends keyof Entity>(
   _deletedByField?: keyof Entity,
   _getDeletedBy?: () => any,
 ): EntityDecorator<Entity> {
+  console.log("[SoftDeletable] Decorator called with:", {
+    _configOrType: typeof _configOrType,
+    _field,
+    _value: typeof _value,
+    _valueInitial,
+    _deletedByField,
+    _getDeletedBy: typeof _getDeletedBy,
+  });
+
   const config =
     typeof _configOrType === "function"
       ? _field && _value
@@ -67,11 +76,16 @@ export function SoftDeletable<Entity, Field extends keyof Entity>(
           }
         : null
       : _configOrType;
+
+  console.log("[SoftDeletable] Config created:", config);
+
   if (!config) throw new Error("Invalid arguments");
 
   return (type: Type<Entity>): void => {
+    console.log("[SoftDeletable] Applying to entity:", type.name);
     Reflect.defineMetadata(SOFT_DELETABLE, config, type);
     const { field, valueInitial } = config;
+    console.log("[SoftDeletable] Setting filter with field:", field, "valueInitial:", valueInitial);
     Filter<Entity>({
       name: SOFT_DELETABLE_FILTER,
       cond: { [field]: valueInitial ?? null } as FilterQuery<Entity>,

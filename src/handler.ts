@@ -6,7 +6,7 @@ import {
   MikroORM,
 } from "@mikro-orm/core";
 
-import { SOFT_DELETABLE, SoftDeletableConfig } from "./common";
+import { SOFT_DELETABLE, SOFT_DELETE_CONTEXT, SoftDeletableConfig } from "./common";
 
 /**
  * Intercept deletions of soft-deletable entities and perform updates instead.
@@ -30,12 +30,35 @@ export class SoftDeleteHandler implements EventSubscriber {
             item.type === ChangeSetType.DELETE &&
             Reflect.hasMetadata(SOFT_DELETABLE, item.entity.constructor)
           ) {
-            const { field, value }: SoftDeletableConfig<Entity, Field> =
+            const config: SoftDeletableConfig<Entity, Field> =
               Reflect.getMetadata(SOFT_DELETABLE, item.entity.constructor);
+            const { field, value, deletedByField, getDeletedBy } = config;
 
             item.type = ChangeSetType.UPDATE;
             item.entity[field] = value();
             item.payload[field] = value();
+
+            // Set deletedBy field if configured
+            if (deletedByField) {
+              let deletedByValue: any;
+
+              if (getDeletedBy) {
+                // Use provided function
+                deletedByValue = getDeletedBy();
+              } else {
+                // Try to get from context
+                const context = Reflect.getMetadata(
+                  SOFT_DELETE_CONTEXT,
+                  item.entity.constructor,
+                );
+                deletedByValue = context?.deletedBy;
+              }
+
+              if (deletedByValue !== undefined) {
+                item.entity[deletedByField] = deletedByValue;
+                item.payload[deletedByField] = deletedByValue;
+              }
+            }
 
             // Don't recompute here. Otherwise ManyToOne relation fields will be
             // set to `null` and cause a `NotNullConstraintViolationException`.

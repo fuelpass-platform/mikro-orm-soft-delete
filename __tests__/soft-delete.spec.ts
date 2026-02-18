@@ -52,6 +52,25 @@ class UserIsDeletedAlt extends BaseEntity {
   isDeleted!: boolean;
 }
 
+@SoftDeletable({
+  type: () => UserWithDeletedBy,
+  field: "deletedAt",
+  value: () => new Date(),
+  valueInitial: null,
+  deletedByField: "deletedBy",
+})
+@Entity()
+class UserWithDeletedBy extends BaseEntity {
+  @PrimaryKey()
+  id!: number;
+
+  @Property({ nullable: true })
+  deletedAt?: Date;
+
+  @Property({ nullable: true })
+  deletedBy?: string;
+}
+
 describe("decorator", () => {
   let orm: MikroORM;
 
@@ -139,6 +158,33 @@ describe("decorator", () => {
         filters: false,
       }),
     ).resolves.toBeDefined();
+
+    await cleanup();
+  });
+
+  test("deletedBy field should be set on soft deletion via context", async () => {
+    await init([UserWithDeletedBy]);
+
+    orm.em.create(UserWithDeletedBy, { id: 1 });
+    await orm.em.flush();
+
+    // Set context before deletion
+    Reflect.defineMetadata(
+      require("../src/common").SOFT_DELETE_CONTEXT,
+      { deletedBy: "admin-user" },
+      UserWithDeletedBy,
+    );
+
+    const user = await orm.em.findOneOrFail(UserWithDeletedBy, 1);
+    orm.em.remove(user);
+    await orm.em.flush();
+
+    const userSoftDeleted = await orm.em.findOneOrFail(UserWithDeletedBy, 1, {
+      filters: false,
+    });
+
+    expect(userSoftDeleted.deletedAt).toBeInstanceOf(Date);
+    expect(userSoftDeleted.deletedBy).toEqual("admin-user");
 
     await cleanup();
   });

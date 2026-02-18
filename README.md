@@ -108,6 +108,97 @@ This option could also be specified through the 4th argument:
 @SoftDeletable(() => User, 'isDeleted', () => true, false)
 ```
 
+### Tracking Deletions with `deletedBy`
+
+You can optionally track who deleted an entity by specifying a `deletedByField`. There are two ways to provide the user/actor information:
+
+#### Option 1: Using Context (Recommended for Services)
+
+Set the context before performing deletions:
+
+```ts
+import { SOFT_DELETE_CONTEXT } from "mikro-orm-soft-delete";
+
+@SoftDeletable({
+  type: () => User,
+  field: 'deletedAt',
+  value: () => new Date(),
+  deletedByField: 'deletedBy',
+})
+@Entity()
+export class User extends BaseEntity {
+  @PrimaryKey()
+  id: number;
+
+  @Property({ nullable: true })
+  deletedAt?: Date;
+
+  @Property({ nullable: true })
+  deletedBy?: string;
+}
+```
+
+In your service, set the context before deletion:
+
+```ts
+export class UserService {
+  constructor(
+    private em: EntityManager,
+    private authService: AuthService,
+  ) {}
+
+  async deleteUser(userId: number): Promise<void> {
+    const currentUserId = this.authService.getCurrentUserId();
+    
+    // Set the context for soft delete
+    Reflect.defineMetadata(
+      SOFT_DELETE_CONTEXT,
+      { deletedBy: currentUserId },
+      User,
+    );
+
+    const user = await this.em.findOneOrFail(User, userId);
+    this.em.remove(user);
+    await this.em.flush();
+  }
+}
+```
+
+#### Option 2: Using a Function
+
+If you have access to a synchronous function that returns the current user:
+
+```ts
+@SoftDeletable({
+  type: () => User,
+  field: 'deletedAt',
+  value: () => new Date(),
+  deletedByField: 'deletedBy',
+  getDeletedBy: () => getCurrentUserIdSync(), // synchronous function
+})
+@Entity()
+export class User extends BaseEntity {
+  @PrimaryKey()
+  id: number;
+
+  @Property({ nullable: true })
+  deletedAt?: Date;
+
+  @Property({ nullable: true })
+  deletedBy?: string;
+}
+```
+
+#### Verification
+
+Query with filters disabled to see the soft-deleted data with `deletedBy` information:
+
+```ts
+const deletedUser = await repo.findOne(1, { filters: false });
+console.log(deletedUser.deletedAt); // Date instance
+console.log(deletedUser.deletedBy); // "user-123"
+```
+
 ### Inheritance
 
 Inheritance is supported for the `SoftDeletable` decorator, thus it is possible to create a `SoftDeletableBaseEntity` to make all the sub entity classes soft-deletable:

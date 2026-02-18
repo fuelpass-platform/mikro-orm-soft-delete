@@ -32,6 +32,8 @@ export function SoftDeletable<Entity, Field extends keyof Entity>(
  * @param field - Identifier field used to identify deleted entities.
  * @param value - Value to set to the identifier field in deletions.
  * @param valueInitial - Value to identify entities that is NOT soft-deleted. Defaults to `null`.
+ * @param deletedByField - Optional field to track who deleted the entity.
+ * @param getDeletedBy - Optional function to get the current user/actor performing the deletion.
  * @see SoftDeletionEventSubscriber
  */
 export function SoftDeletable<Entity, Field extends keyof Entity>(
@@ -39,6 +41,8 @@ export function SoftDeletable<Entity, Field extends keyof Entity>(
   field: Field,
   value: () => Entity[Field],
   valueInitial?: Entity[Field],
+  deletedByField?: keyof Entity,
+  getDeletedBy?: () => any,
 ): EntityDecorator<Entity>;
 export function SoftDeletable<Entity, Field extends keyof Entity>(
   _configOrType:
@@ -47,6 +51,8 @@ export function SoftDeletable<Entity, Field extends keyof Entity>(
   _field?: Field,
   _value?: () => Entity[Field],
   _valueInitial?: Entity[Field],
+  _deletedByField?: keyof Entity,
+  _getDeletedBy?: () => any,
 ): EntityDecorator<Entity> {
   const config =
     typeof _configOrType === "function"
@@ -56,6 +62,8 @@ export function SoftDeletable<Entity, Field extends keyof Entity>(
             field: _field,
             value: _value,
             valueInitial: _valueInitial,
+            deletedByField: _deletedByField,
+            getDeletedBy: _getDeletedBy,
           }
         : null
       : _configOrType;

@@ -6,7 +6,7 @@
   "packageManager": "npm@10.2.3",
   "scripts": {
     "test": "jest --detectOpenHandles",
-    "prebuild": "rimraf lib",
+    "prebuild": "rm -rf lib",
     "build": "tsc -b tsconfig.build.json",
     "postinstall": "npm run build",
     "format": "prettier --write \"**/*.ts\" \"*.js\" \"*.json\"",
@@ -52,6 +52,7 @@
   "files": [
     "src",
     "lib",
+    "*",
     "tsconfig.build.json",
     "tsconfig.json",
     "!**/__test__",

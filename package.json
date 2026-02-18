@@ -52,8 +52,9 @@
   "files": [
     "src",
     "lib",
+    "tsconfig.build.json",
+    "tsconfig.json",
     "!**/__test__",
-    "!**/tsconfig.*",
     "README*.md"
   ],
   "peerDependencies": {
